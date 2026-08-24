@@ -11,6 +11,10 @@
 ```text
 Enterprise Support Agent/
 ├─ README.md
+├─ app/                                  # FastAPI 服务代码
+├─ tests/                                # 自动化测试
+├─ requirements.txt                      # 直接依赖
+├─ requirements.lock.txt                 # 已验证的精确依赖版本
 └─ docs/
    ├─ ROADMAP.md                           # 阶段与当前进度
    ├─ phase-notes/                         # 已完成阶段的真实复盘
