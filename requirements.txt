@@ -2,3 +2,7 @@ fastapi
 uvicorn[standard]
 pytest
 httpx
+langchain-core
+langgraph
+langchain-openai
+python-dotenv
