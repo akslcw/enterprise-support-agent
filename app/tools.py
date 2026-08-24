@@ -1,5 +1,26 @@
+from typing import Literal
 from langchain_core.tools import tool
 
+from app.schemas import CreateTicketInput
+from app.services.tickets import prepare_create_ticket as prepare_ticket
+
+
+@tool
+def prepare_create_ticket(
+    customer_id: str,
+    title: str,
+    priority: Literal["low", "normal", "high"] = "normal",
+) -> dict:
+    """准备创建客服工单。该操作不会真正创建工单，只会返回等待用户确认的结果。"""
+    command = CreateTicketInput(
+        customer_id=customer_id,
+        title=title,
+        priority=priority,
+    )
+
+    result = prepare_ticket(command)
+
+    return result.model_dump()
 
 @tool
 def get_order_status(order_id: str) -> str:

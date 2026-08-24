@@ -1,0 +1,23 @@
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+
+
+class CreateTicketInput(BaseModel):
+    customer_id: str = Field(
+        min_length=1,
+        description="客户 ID",
+    )
+    title: str = Field(
+        min_length=3,
+        max_length=100,
+        description="工单标题",
+    )
+    priority: Literal["low", "normal", "high"] = "normal"
+
+
+class ToolResult(BaseModel):
+    ok: bool
+    message: str
+    data: dict[str, Any] | None = None
+    error_code: str | None = None
