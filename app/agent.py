@@ -2,6 +2,7 @@ from typing import Annotated, TypedDict
 
 from langchain_core.messages import AnyMessage, SystemMessage
 from langchain_core.tools import BaseTool
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -33,7 +34,10 @@ class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
 
 
-def create_graph(mcp_tools: list[BaseTool]):
+def create_graph(
+    mcp_tools: list[BaseTool],
+    checkpointer: BaseCheckpointSaver,
+):
     """使用启动时发现的 MCP Tools 创建异步 LangGraph。"""
 
     tools = [
@@ -71,4 +75,4 @@ def create_graph(mcp_tools: list[BaseTool]):
 
     builder.add_edge("tools", "agent")
 
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer)

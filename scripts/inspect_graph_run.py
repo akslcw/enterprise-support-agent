@@ -1,6 +1,7 @@
 import asyncio
 
 from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent import create_graph
 from app.mcp_client import load_mcp_tools
@@ -8,14 +9,22 @@ from app.mcp_client import load_mcp_tools
 
 async def main() -> None:
     mcp_tools = await load_mcp_tools()
-    graph = create_graph(mcp_tools)
+    graph = create_graph(
+        mcp_tools,
+        InMemorySaver(),
+    )
 
     result = await graph.ainvoke(
         {
             "messages": [
                 HumanMessage(content="订单 1002 到哪里了？"),
             ]
-        }
+        },
+        config={
+            "configurable": {
+                "thread_id": "graph-inspection",
+            }
+        },
     )
 
     for index, message in enumerate(result["messages"], start=1):
