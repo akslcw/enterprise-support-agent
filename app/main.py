@@ -1,14 +1,26 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
-from langchain_core.messages import HumanMessage
+from app.agent import create_graph
+from app.mcp_client import load_mcp_tools
 
-from app.agent import graph
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    mcp_tools = await load_mcp_tools()
+
+    app.state.graph = create_graph(mcp_tools)
+
+    yield
 
 
 app = FastAPI(
     title="Enterprise Support Agent",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
@@ -22,8 +34,8 @@ def health() -> dict[str, str]:
 
 
 @app.post("/chat")
-def chat(body: ChatRequest) -> dict[str, str]:
-    result = graph.invoke(
+async def chat(body: ChatRequest, request: Request) -> dict[str, str]:
+    result = await request.app.state.graph.ainvoke(
         {
             "messages": [
                 HumanMessage(content=body.message),
