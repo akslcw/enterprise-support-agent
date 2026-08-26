@@ -10,7 +10,7 @@
 | 已完成 | Stage 03：RAG | 本地 BGE + Chroma 知识查询、来源与无关问题拒答 |
 | 已完成 | Stage 04：MCP | 独立订单 Server、stdio Client、动态 Tool 加载 |
 | 已完成 | Stage 05：会话与 Checkpoint | InMemory Checkpoint、thread_id 上下文与隔离 |
-| 未开始 | Stage 06：人工审批 | 写操作 interrupt / resume |
+| 已完成 | Stage 06：人工审批 | 写操作 interrupt / resume、草稿和幂等正式创建 |
 | 未开始 | Stage 07：多 Agent | Supervisor 与领域 Agent |
 | 未开始 | Stage 08：持久化 | PostgreSQL、Redis、迁移与缓存 |
 | 未开始 | Stage 09：可靠性与安全 | Trace、超时、重试、权限边界 |

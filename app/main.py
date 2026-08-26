@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.types import Command
 from pydantic import BaseModel, Field
 
 from app.agent import create_graph
@@ -35,6 +37,9 @@ class ChatRequest(BaseModel):
     thread_id: str = Field(min_length=1, max_length=100)
     message: str = Field(min_length=1, max_length=1000)
 
+class ApprovalRequest(BaseModel):
+    thread_id: str = Field(min_length=1, max_length=100)
+    approved: bool
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -42,7 +47,7 @@ def health() -> dict[str, str]:
 
 
 @app.post("/chat")
-async def chat(body: ChatRequest, request: Request) -> dict[str, str]:
+async def chat(body: ChatRequest, request: Request) -> dict[str, Any]:
     result = await request.app.state.graph.ainvoke(
         {
             "messages": [
@@ -56,10 +61,36 @@ async def chat(body: ChatRequest, request: Request) -> dict[str, str]:
         },
     )
 
+    approval = get_interrupt_payload(result)
+
+    if approval is not None:
+        return {
+            "status": "pending_approval",
+            "thread_id": body.thread_id,
+            "approval": approval,
+        }
+
     final_message = result["messages"][-1]
 
-    return {"answer": str(final_message.content)}
+    return {
+        "status": "completed",
+        "answer": str(final_message.content),
+    }
 
+def get_interrupt_payload(result: dict[str, Any]) -> dict[str, Any] | None:
+    """提取 Graph 暂停时需要交给人工审批者的内容。"""
+
+    interrupts = result.get("__interrupt__", [])
+
+    if not interrupts:
+        return None
+
+    payload = interrupts[0].value
+
+    if not isinstance(payload, dict):
+        return None
+
+    return payload
 
 def thread_config(thread_id: str) -> dict:
     return {
@@ -68,6 +99,40 @@ def thread_config(thread_id: str) -> dict:
         }
     }
 
+def has_pending_interrupt(request: Request, thread_id: str) -> bool:
+    """判断指定会话是否存在尚未恢复的人工审批。"""
+
+    state = request.app.state.graph.get_state(
+        thread_config(thread_id)
+    )
+
+    return any(task.interrupts for task in state.tasks)
+
+
+@app.post("/tickets/approval")
+async def resume_ticket_approval(
+    body: ApprovalRequest,
+    request: Request,
+) -> dict[str, Any]:
+    if not has_pending_interrupt(request, body.thread_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="该 thread_id 没有待处理的人工审批。",
+        )
+
+    result = await request.app.state.graph.ainvoke(
+        Command(resume={"approved": body.approved}),
+        config=thread_config(body.thread_id),
+    )
+
+    final_message = result["messages"][-1]
+
+    return {
+        "status": "completed",
+        "thread_id": body.thread_id,
+        "approved": body.approved,
+        "answer": str(final_message.content),
+    }
 
 @app.get(
     "/admin/threads/{thread_id}",
