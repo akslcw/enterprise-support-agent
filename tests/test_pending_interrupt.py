@@ -1,3 +1,4 @@
+import asyncio
 from types import SimpleNamespace
 
 from app.main import has_pending_interrupt
@@ -7,7 +8,7 @@ class FakeGraph:
     def __init__(self, tasks):
         self.tasks = tasks
 
-    def get_state(self, config):
+    async def aget_state(self, config):
         return SimpleNamespace(tasks=self.tasks)
 
 
@@ -28,7 +29,11 @@ def test_has_pending_interrupt_returns_true() -> None:
 
     request = make_request([task])
 
-    assert has_pending_interrupt(request, "thread-001") is True
+    result = asyncio.run(
+        has_pending_interrupt(request, "thread-001")
+    )
+
+    assert result is True
 
 
 def test_has_pending_interrupt_returns_false_without_interrupt() -> None:
@@ -36,4 +41,8 @@ def test_has_pending_interrupt_returns_false_without_interrupt() -> None:
 
     request = make_request([task])
 
-    assert has_pending_interrupt(request, "thread-001") is False
+    result = asyncio.run(
+        has_pending_interrupt(request, "thread-001")
+    )
+
+    assert result is False

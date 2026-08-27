@@ -1,6 +1,10 @@
 from typing import Any, TypedDict
 
-from langchain_core.messages import AnyMessage, SystemMessage
+from langchain_core.messages import (
+    AnyMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from langgraph.graph import END, START, StateGraph
 
 from app.schemas import (
@@ -24,6 +28,18 @@ SUPERVISOR_PROMPT = """
 """
 
 
+def get_current_user_message(
+    messages: list[AnyMessage],
+) -> HumanMessage:
+    """返回本轮最新的用户消息，隔离历史领域 Tool 消息。"""
+
+    for message in reversed(messages):
+        if isinstance(message, HumanMessage):
+            return message
+
+    raise ValueError("Supervisor 至少需要一条用户消息。")
+
+
 def create_supervisor_node(model: Any):
     """将支持 structured output 的模型包装成 LangGraph 节点。"""
 
@@ -33,10 +49,14 @@ def create_supervisor_node(model: Any):
     )
 
     async def supervisor(state: dict[str, Any]) -> dict[str, Any]:
+        current_user_message = get_current_user_message(
+            state["messages"]
+        )
+
         decision = await structured_model.ainvoke(
             [
                 SystemMessage(content=SUPERVISOR_PROMPT),
-                *state["messages"],
+                current_user_message,
             ]
         )
 
