@@ -37,3 +37,19 @@ class CreatedTicket(BaseModel):
     title: str
     priority: Literal["low", "normal", "high"]
     status: Literal["created"]
+
+SupervisorRoute = Literal[
+    "order_agent",
+    "knowledge_agent",
+    "ticket_agent",
+    "unsupported",
+]
+
+class SupervisorDecision(BaseModel):
+    """Supervisor 可选择的下一处理节点。"""
+
+    next_agent: SupervisorRoute = Field(
+        description=(
+            "根据用户当前请求选择唯一的下一处理节点。"
+        )
+    )

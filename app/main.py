@@ -7,7 +7,8 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 
-from app.agent import create_graph
+from app.llm import create_chat_model
+from app.multi_agent import create_multi_agent_graph
 from app.mcp_client import load_mcp_tools
 from app.session_admin import require_admin_token
 
@@ -18,10 +19,16 @@ async def lifespan(app: FastAPI):
     checkpointer = InMemorySaver()
 
     app.state.checkpointer = checkpointer
-    app.state.graph = create_graph(
-        mcp_tools,
-        checkpointer,
-    )
+    app.state.graph = create_multi_agent_graph(
+    mcp_tools=mcp_tools,
+    checkpointer=checkpointer,
+    supervisor_model=create_chat_model(
+        thinking="disabled"
+    ),
+    order_model=create_chat_model(),
+    knowledge_model=create_chat_model(),
+    ticket_model=create_chat_model(),
+)
 
     yield
 

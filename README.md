@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-项目采用“边做边学”的方式重新构建。当前已完成 FastAPI 健康检查、业务 Tool、本地 RAG、动态 MCP Tool、基于 `thread_id` 的 Checkpoint 会话记忆与隔离，以及“草稿 → 人工确认 → 正式创建”的 Human-in-the-Loop 工单审批流。每个阶段完成并验证后，才会写入真实复盘并提交 Git。
+项目采用“边做边学”的方式重新构建。当前已完成 FastAPI 健康检查、业务 Tool、本地 RAG、动态 MCP Tool、基于 `thread_id` 的 Checkpoint 会话记忆与隔离、Human-in-the-Loop 工单审批流，以及由 Supervisor 编排订单、知识库、工单领域 Agent 的 Multi-Agent 架构。每个阶段完成并验证后，才会写入真实复盘并提交 Git。
 
 ## 目录说明
 

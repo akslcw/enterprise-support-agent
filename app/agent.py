@@ -15,7 +15,10 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import interrupt
 
 from app.llm import create_chat_model
-from app.schemas import TicketDraft
+from app.schemas import (
+    SupervisorRoute,
+    TicketDraft,
+)
 from app.services.tickets import create_ticket_from_draft
 from app.tools import prepare_create_ticket, search_knowledge
 
@@ -43,6 +46,7 @@ class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     pending_ticket: dict[str, Any] | None
     approval_decision: bool | None
+    next_agent: SupervisorRoute | None
 
 def parse_tool_result(message: ToolMessage) -> dict[str, Any] | None:
     """把 ToolMessage 中的 JSON 结果安全地解析为字典。"""
