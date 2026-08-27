@@ -38,6 +38,33 @@ class CreatedTicket(BaseModel):
     priority: Literal["low", "normal", "high"]
     status: Literal["created"]
 
+class HealthResponse(BaseModel):
+    status: Literal["ok"]
+
+
+class ChatCompletedResponse(BaseModel):
+    status: Literal["completed"]
+    answer: str
+
+
+class TicketApprovalPayload(BaseModel):
+    type: Literal["ticket_approval"]
+    message: str
+    draft: TicketDraft
+
+
+class PendingApprovalResponse(BaseModel):
+    status: Literal["pending_approval"]
+    thread_id: str
+    approval: TicketApprovalPayload
+
+
+class TicketApprovalCompletedResponse(BaseModel):
+    status: Literal["completed"]
+    thread_id: str
+    approved: bool
+    answer: str
+
 SupervisorRoute = Literal[
     "order_agent",
     "knowledge_agent",

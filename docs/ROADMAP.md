@@ -13,7 +13,7 @@
 | 已完成 | Stage 06：人工审批 | 写操作 interrupt / resume、草稿和幂等正式创建 |
 | 已完成 | Stage 07：多 Agent | Supervisor、领域 Agent、最小 Tool 权限与 HITL 继承 |
 | 已完成 | Stage 08：持久化与缓存 | Docker PostgreSQL Checkpoint、Redis 缓存、TTL 与失效接口 |
-| 未开始 | Stage 09：可靠性与安全 | Trace、超时、重试、权限边界 |
+| 已完成 | Stage 09：可靠性与安全 | Trace、JSON 日志、超时、只读重试、结构化响应与输入边界 |
 | 未开始 | Stage 10：交付 | Docker、测试、部署与项目演示 |
 | 未开始 | Stage 11：开源项目拆解 | 对照 Starter Kit 理解工程取舍 |
 | 未开始 | Stage 12：独立重构 | 形成可写入简历的个人版本 |

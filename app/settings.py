@@ -60,3 +60,43 @@ def order_status_cache_ttl_seconds() -> int:
         )
 
     return ttl_seconds
+
+def llm_timeout_seconds() -> int:
+    raw_value = os.getenv(
+        "LLM_TIMEOUT_SECONDS",
+        "30",
+    )
+
+    try:
+        timeout_seconds = int(raw_value)
+    except ValueError as error:
+        raise RuntimeError(
+            "LLM_TIMEOUT_SECONDS 必须是正整数。"
+        ) from error
+
+    if timeout_seconds <= 0:
+        raise RuntimeError(
+            "LLM_TIMEOUT_SECONDS 必须是正整数。"
+        )
+
+    return timeout_seconds
+
+def agent_timeout_seconds() -> float:
+    raw_value = os.getenv(
+        "AGENT_TIMEOUT_SECONDS",
+        "45",
+    )
+
+    try:
+        timeout_seconds = float(raw_value)
+    except ValueError as error:
+        raise RuntimeError(
+            "AGENT_TIMEOUT_SECONDS 必须是正数。"
+        ) from error
+
+    if timeout_seconds <= 0:
+        raise RuntimeError(
+            "AGENT_TIMEOUT_SECONDS 必须是正数。"
+        )
+
+    return timeout_seconds

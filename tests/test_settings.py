@@ -1,5 +1,7 @@
 import pytest
 from app.settings import (
+    agent_timeout_seconds,
+    llm_timeout_seconds,
     order_status_cache_ttl_seconds,
     postgres_connection_string,
     redis_connection_string,
@@ -71,3 +73,64 @@ def test_order_status_cache_ttl_seconds_rejects_invalid_value(
         match="必须是正整数",
     ):
         order_status_cache_ttl_seconds()
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("1", 1),
+        ("45", 45),
+    ],
+)
+def test_llm_timeout_seconds_reads_valid_value(
+    monkeypatch,
+    value,
+    expected,
+) -> None:
+    monkeypatch.setenv("LLM_TIMEOUT_SECONDS", value)
+
+    assert llm_timeout_seconds() == expected
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "invalid"])
+def test_llm_timeout_seconds_rejects_invalid_value(
+    monkeypatch,
+    value,
+) -> None:
+    monkeypatch.setenv("LLM_TIMEOUT_SECONDS", value)
+
+    with pytest.raises(
+        RuntimeError,
+        match="必须是正整数",
+    ):
+        llm_timeout_seconds()
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("0.1", 0.1),
+        ("45", 45.0),
+    ],
+)
+def test_agent_timeout_seconds_reads_valid_value(
+    monkeypatch,
+    value,
+    expected,
+) -> None:
+    monkeypatch.setenv("AGENT_TIMEOUT_SECONDS", value)
+
+    assert agent_timeout_seconds() == expected
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "invalid"])
+def test_agent_timeout_seconds_rejects_invalid_value(
+    monkeypatch,
+    value,
+) -> None:
+    monkeypatch.setenv("AGENT_TIMEOUT_SECONDS", value)
+
+    with pytest.raises(
+        RuntimeError,
+        match="必须是正数",
+    ):
+        agent_timeout_seconds()

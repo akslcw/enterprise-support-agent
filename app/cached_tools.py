@@ -3,6 +3,7 @@ from typing import Any
 
 from langchain_core.tools import BaseTool, StructuredTool
 
+from app.reliability import retry_read_operation
 from app.cache import OrderStatusCache
 
 
@@ -54,8 +55,11 @@ def create_cached_order_status_tool(
                 ensure_ascii=False,
             )
 
-        raw_result = await source_tool.ainvoke(
-            {"order_id": order_id}
+        raw_result = await retry_read_operation(
+            lambda: source_tool.ainvoke(
+                {"order_id": order_id}
+            ),
+            operation_name="mcp_order_get_status",
         )
 
         payload = extract_order_status_payload(raw_result)

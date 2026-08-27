@@ -29,7 +29,10 @@ class FakeRedis:
         return int(existed)
 
 
-def create_source_tool(calls: list[str]):
+def create_source_tool(
+    calls: list[str],
+    failures_before_success: int = 0,
+):
     @tool
     async def order_get_status(
         order_id: str,
@@ -37,6 +40,9 @@ def create_source_tool(calls: list[str]):
         """根据订单编号查询订单当前状态。"""
 
         calls.append(order_id)
+
+        if len(calls) <= failures_before_success:
+            raise ConnectionError("temporary MCP failure")
 
         return [
             {
@@ -112,3 +118,23 @@ def test_cached_tool_preserves_tool_contract() -> None:
 
     assert cached_tool.name == "order_get_status"
     assert cached_tool.args_schema == source_tool.args_schema
+
+def test_cached_tool_retries_transient_mcp_failure() -> None:
+    calls: list[str] = []
+    source_tool = create_source_tool(
+        calls,
+        failures_before_success=1,
+    )
+    cache = OrderStatusCache(FakeRedis())
+
+    cached_tool = create_cached_order_status_tool(
+        source_tool,
+        cache,
+    )
+
+    result = asyncio.run(
+        cached_tool.ainvoke({"order_id": "1002"})
+    )
+
+    assert json.loads(result)["found"] is True
+    assert calls == ["1002", "1002"]

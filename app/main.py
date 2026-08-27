@@ -1,12 +1,23 @@
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    Path,
+    Request,
+    status,
+)
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 from redis.asyncio import Redis
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import (
+    HTTPException as StarletteHTTPException,
+)
 
 from app.llm import create_chat_model
 from app.multi_agent import create_multi_agent_graph
@@ -19,9 +30,33 @@ from app.settings import (
     order_status_cache_ttl_seconds,
     postgres_connection_string,
     redis_connection_string,
+    agent_timeout_seconds,
+)
+from app.observability import (
+    TraceIdMiddleware,
+    configure_application_logging,
+    HTTP_LOGGER,
+)
+from app.reliability import (
+    OperationTimeoutError,
+    run_with_timeout,
+)
+from app.error_handlers import (
+    http_exception_handler,
+    unhandled_exception_handler,
+    validation_error_handler,
+)
+from app.schemas import (
+    ChatCompletedResponse,
+    PendingApprovalResponse,
+    TicketApprovalCompletedResponse,
+    TicketApprovalPayload,
+    HealthResponse
 )
 
+
 configure_asyncio_for_psycopg()
+configure_application_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -80,50 +115,109 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(TraceIdMiddleware)
+app.add_exception_handler(
+    StarletteHTTPException,
+    http_exception_handler,
+)
+app.add_exception_handler(
+    RequestValidationError,
+    validation_error_handler,
+)
+app.add_exception_handler(
+    Exception,
+    unhandled_exception_handler,
+)
+IDENTIFIER_PATTERN = (
+    r"^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$"
+)
 
 class ChatRequest(BaseModel):
-    thread_id: str = Field(min_length=1, max_length=100)
-    message: str = Field(min_length=1, max_length=1000)
+    thread_id: str = Field(
+        min_length=1,
+        max_length=100,
+        pattern=IDENTIFIER_PATTERN,
+    )
+    message: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+
 
 class ApprovalRequest(BaseModel):
-    thread_id: str = Field(min_length=1, max_length=100)
+    thread_id: str = Field(
+        min_length=1,
+        max_length=100,
+        pattern=IDENTIFIER_PATTERN,
+    )
     approved: bool
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+
+@app.get("/health", response_model=HealthResponse)
+def health() -> HealthResponse:
+    return HealthResponse(status="ok")
 
 
-@app.post("/chat")
-async def chat(body: ChatRequest, request: Request) -> dict[str, Any]:
-    result = await request.app.state.graph.ainvoke(
-        {
-            "messages": [
-                HumanMessage(content=body.message),
-            ]
-        },
-        config={
-            "configurable": {
-                "thread_id": body.thread_id,
-            }
-        },
-    )
+@app.post(
+    "/chat",
+    response_model=(
+        ChatCompletedResponse
+        | PendingApprovalResponse
+    ),
+)
+async def chat(
+    body: ChatRequest,
+    request: Request,
+) -> ChatCompletedResponse | PendingApprovalResponse:
+    try:
+        result = await run_with_timeout(
+            request.app.state.graph.ainvoke(
+                {
+                    "messages": [
+                       HumanMessage(content=body.message),
+                    ]
+                },
+                config={
+                    "configurable": {
+                        "thread_id": body.thread_id,
+                    }
+                },
+            ),
+            operation_name="chat_graph",
+            timeout_seconds=agent_timeout_seconds(),
+        )
+    except OperationTimeoutError:
+        HTTP_LOGGER.warning(
+            "chat_timeout",
+            extra={
+                "trace_id": request.state.trace_id,
+                "method": request.method,
+                "path": request.url.path,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Agent 请求超时，请稍后重试。",
+        ) from None
 
     approval = get_interrupt_payload(result)
 
     if approval is not None:
-        return {
-            "status": "pending_approval",
-            "thread_id": body.thread_id,
-            "approval": approval,
-        }
+        return PendingApprovalResponse(
+            status="pending_approval",
+            thread_id=body.thread_id,
+            approval=TicketApprovalPayload.model_validate(
+                approval
+            ),
+        )
 
     final_message = result["messages"][-1]
 
-    return {
-        "status": "completed",
-        "answer": str(final_message.content),
-    }
+    return ChatCompletedResponse(
+        status="completed",
+        answer=str(final_message.content),
+    )
+
 
 def get_interrupt_payload(result: dict[str, Any]) -> dict[str, Any] | None:
     """提取 Graph 暂停时需要交给人工审批者的内容。"""
@@ -160,38 +254,63 @@ async def has_pending_interrupt(
     return any(task.interrupts for task in state.tasks)
 
 
-@app.post("/tickets/approval")
+@app.post(
+    "/tickets/approval",
+    response_model=TicketApprovalCompletedResponse,
+)
 async def resume_ticket_approval(
     body: ApprovalRequest,
     request: Request,
-) -> dict[str, Any]:
+) -> TicketApprovalCompletedResponse:
     if not await has_pending_interrupt(request, body.thread_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="该 thread_id 没有待处理的人工审批。",
         )
 
-    result = await request.app.state.graph.ainvoke(
-        Command(resume={"approved": body.approved}),
-        config=thread_config(body.thread_id),
-    )
+    try:
+        result = await run_with_timeout(
+            request.app.state.graph.ainvoke(
+                Command(resume={"approved": body.approved}),
+                config=thread_config(body.thread_id),
+            ),
+            operation_name="ticket_approval_resume",
+            timeout_seconds=agent_timeout_seconds(),
+        )
+    except OperationTimeoutError:
+        HTTP_LOGGER.warning(
+            "ticket_approval_timeout",
+            extra={
+                "trace_id": request.state.trace_id,
+                "method": request.method,
+                "path": request.url.path,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="工单审批处理超时，请稍后确认状态。",
+        ) from None
 
     final_message = result["messages"][-1]
 
-    return {
-        "status": "completed",
-        "thread_id": body.thread_id,
-        "approved": body.approved,
-        "answer": str(final_message.content),
-    }
+    return TicketApprovalCompletedResponse(
+        status="completed",
+        thread_id=body.thread_id,
+        approved=body.approved,
+        answer=str(final_message.content),
+    )
 
 @app.get(
     "/admin/threads/{thread_id}",
     dependencies=[Depends(require_admin_token)],
 )
 async def get_thread_state(
-    thread_id: str,
     request: Request,
+    thread_id: str = Path(
+        min_length=1,
+        max_length=100,
+        pattern=IDENTIFIER_PATTERN,
+    ),
 ) -> dict:
     config = thread_config(thread_id)
 
@@ -225,9 +344,13 @@ async def get_thread_state(
     "/admin/threads/{thread_id}",
     dependencies=[Depends(require_admin_token)],
 )
-async def delete_thread_state(
-    thread_id: str,
+async def get_thread_state(
     request: Request,
+    thread_id: str = Path(
+        min_length=1,
+        max_length=100,
+        pattern=IDENTIFIER_PATTERN,
+    ),
 ) -> dict:
     config = thread_config(thread_id)
 
@@ -253,8 +376,12 @@ async def delete_thread_state(
     dependencies=[Depends(require_admin_token)],
 )
 async def invalidate_order_status_cache(
-    order_id: str,
     request: Request,
+    order_id: str = Path(
+        min_length=1,
+        max_length=100,
+        pattern=IDENTIFIER_PATTERN,
+    ),
 ) -> dict:
     await request.app.state.order_cache.invalidate(order_id)
 

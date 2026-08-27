@@ -3,6 +3,7 @@ from typing import Literal
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from app.settings import llm_timeout_seconds
 
 
 load_dotenv()
@@ -17,6 +18,7 @@ def create_chat_model(
         api_key=os.environ["DEEPSEEK_API_KEY"],
         base_url=os.environ["DEEPSEEK_BASE_URL"],
         temperature=0,
+        timeout=llm_timeout_seconds(),
         extra_body={
             "thinking": {
                 "type": thinking,
