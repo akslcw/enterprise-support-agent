@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-项目采用“边做边学”的方式重新构建。当前已完成 FastAPI 健康检查、业务 Tool、本地 RAG、动态 MCP Tool、基于 `thread_id` 的 Checkpoint 会话记忆与隔离、Human-in-the-Loop 工单审批流，以及由 Supervisor 编排订单、知识库、工单领域 Agent 的 Multi-Agent 架构。会话 Checkpoint 已迁移至 PostgreSQL，订单状态查询已接入 Redis 缓存、TTL 与受保护的失效接口；服务还具备 Trace ID、JSON 结构化日志、超时、只读重试、统一错误契约和输入边界。现在可通过 Docker Compose 启动 app、PostgreSQL 与 Redis，并用独立测试容器验证全套测试。每个阶段完成并验证后，才会写入真实复盘并提交 Git。
+项目采用“边做边学”的方式重新构建。当前已完成 FastAPI 健康检查、业务 Tool、本地 RAG、动态 MCP Tool、基于 `thread_id` 的 Checkpoint 会话记忆与隔离、Human-in-the-Loop 工单审批流，以及由 Supervisor 编排订单、知识库、工单领域 Agent 的 Multi-Agent 架构。会话 Checkpoint 已迁移至 PostgreSQL，订单状态查询已接入 Redis 缓存、TTL 与受保护的失效接口；服务还具备 Trace ID、JSON 结构化日志、超时、只读重试、统一错误契约和输入边界。现在可通过 Docker Compose 启动 app、PostgreSQL 与 Redis，并用独立测试容器验证全套测试；还完成了对开源 Starter Kit 的架构、安全和工程取舍审查，为下一阶段的独立重构提供边界。每个阶段完成并验证后，才会写入真实复盘并提交 Git。
 
 ## 目录说明
 

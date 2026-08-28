@@ -15,7 +15,7 @@
 | 已完成 | Stage 08：持久化与缓存 | Docker PostgreSQL Checkpoint、Redis 缓存、TTL 与失效接口 |
 | 已完成 | Stage 09：可靠性与安全 | Trace、JSON 日志、超时、只读重试、结构化响应与输入边界 |
 | 已完成 | Stage 10：交付 | Docker、测试容器、Compose 启动与本地项目演示 |
-| 未开始 | Stage 11：开源项目拆解 | 对照 Starter Kit 理解工程取舍 |
+| 已完成 | Stage 11：开源项目拆解 | 对照 FastAPI + LangGraph Starter Kit，完成架构与安全取舍 |
 | 未开始 | Stage 12：独立重构 | 形成可写入简历的个人版本 |
 | 未开始 | Stage 13：面试复盘 | 项目讲解、追问与取舍说明 |
 
