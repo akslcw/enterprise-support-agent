@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from app.main import get_interrupt_payload
+from app.application.chat_service import get_interrupt_payload
 
 
 def test_get_interrupt_payload_returns_approval_data() -> None:

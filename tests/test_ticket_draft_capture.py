@@ -2,7 +2,6 @@ import json
 
 from langchain_core.messages import ToolMessage
 
-from app.agent import capture_ticket_draft
 from app.agent import capture_ticket_draft, route_after_tools
 
 

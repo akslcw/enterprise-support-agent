@@ -1,9 +1,10 @@
 from typing import Literal
+
 from langchain_core.tools import tool
 
+from app.rag.retriever import search_knowledge as retrieve_knowledge
 from app.schemas import CreateTicketInput
 from app.services.tickets import prepare_create_ticket as prepare_ticket
-from app.rag.retriever import search_knowledge as retrieve_knowledge
 
 
 @tool

@@ -1,7 +1,5 @@
-from app.schemas import CreateTicketInput
-from app.services.tickets import prepare_create_ticket
-from app.schemas import TicketDraft
-from app.services.tickets import create_ticket_from_draft
+from app.schemas import CreateTicketInput, TicketDraft
+from app.services.tickets import create_ticket_from_draft, prepare_create_ticket
 
 
 def test_prepare_create_ticket_returns_pending_action() -> None:

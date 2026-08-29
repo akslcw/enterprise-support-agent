@@ -1,4 +1,5 @@
 import pytest
+
 from app.settings import (
     agent_timeout_seconds,
     llm_timeout_seconds,
@@ -6,6 +7,7 @@ from app.settings import (
     postgres_connection_string,
     redis_connection_string,
 )
+
 
 def configure_database_env(monkeypatch) -> None:
     monkeypatch.setenv("POSTGRES_USER", "enterprise app")

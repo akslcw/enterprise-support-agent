@@ -1,9 +1,5 @@
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
-
-
-ResultType = TypeVar("ResultType")
 
 
 class OperationTimeoutError(RuntimeError):
@@ -21,7 +17,7 @@ class OperationTimeoutError(RuntimeError):
         self.timeout_seconds = timeout_seconds
 
 
-async def run_with_timeout(
+async def run_with_timeout[ResultType](
     operation: Awaitable[ResultType],
     *,
     operation_name: str,
@@ -55,7 +51,7 @@ class RetryExhaustedError(RuntimeError):
         self.max_attempts = max_attempts
 
 
-async def retry_read_operation(
+async def retry_read_operation[ResultType](
     operation: Callable[[], Awaitable[ResultType]],
     *,
     operation_name: str,

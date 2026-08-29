@@ -4,7 +4,6 @@ from pathlib import Path
 from langchain_core.tools import BaseTool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 

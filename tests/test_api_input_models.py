@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.main import ApprovalRequest, ChatRequest
+from app.api.contracts import ApprovalRequest, ChatRequest
 
 
 @pytest.mark.parametrize(

@@ -12,7 +12,6 @@ from app.schemas import (
     SupervisorRoute,
 )
 
-
 SUPERVISOR_PROMPT = """
 你是企业客服系统的 Supervisor，只负责选择下一位处理者，不回答用户问题，
 不调用任何 Tool，也不创建或修改任何业务数据。

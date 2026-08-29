@@ -29,7 +29,12 @@ class OrderStatusCache:
         if raw_value is None:
             return None
 
-        return json.loads(raw_value)
+        decoded_value = json.loads(raw_value)
+
+        if not isinstance(decoded_value, dict):
+            return None
+
+        return decoded_value
 
     async def set(
         self,

@@ -11,6 +11,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from app.tools import prepare_create_ticket, search_knowledge
 
+
 def build_domain_toolsets(
     mcp_tools: list[BaseTool],
 ) -> dict[str, list[BaseTool]]:

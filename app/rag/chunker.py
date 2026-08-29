@@ -3,7 +3,6 @@ from pathlib import Path
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_DOCUMENTS_DIR = PROJECT_ROOT / "data" / "raw"
 

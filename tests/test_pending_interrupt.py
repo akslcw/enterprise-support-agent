@@ -1,7 +1,7 @@
 import asyncio
 from types import SimpleNamespace
 
-from app.main import has_pending_interrupt
+from app.api.routers.tickets import has_pending_interrupt
 
 
 class FakeGraph:

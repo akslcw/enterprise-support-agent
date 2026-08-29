@@ -5,7 +5,6 @@ from langchain_core.documents import Document
 
 from app.rag.embeddings import get_embedding_function
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 VECTOR_DB_DIR = PROJECT_ROOT / ".chroma"
 
@@ -45,4 +44,4 @@ def index_chunks(chunks: list[Document]) -> int:
         metadatas=metadatas,
     )
 
-    return collection.count()
+    return int(collection.count())

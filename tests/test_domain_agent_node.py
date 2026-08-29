@@ -4,6 +4,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 
 from app.domain_agents import (
+    KNOWLEDGE_AGENT_PROMPT,
     ORDER_AGENT_PROMPT,
     create_domain_agent_node,
 )
@@ -68,7 +69,7 @@ def test_order_agent_only_receives_order_tools() -> None:
         "订单 1002 到哪里了？"
     )
 
-from app.domain_agents import KNOWLEDGE_AGENT_PROMPT
+
 
 
 def test_knowledge_agent_prompt_forbids_unsupported_additions() -> None:

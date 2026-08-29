@@ -1,12 +1,11 @@
 from uuid import uuid4
 
 from app.schemas import (
-    CreateTicketInput,
     CreatedTicket,
+    CreateTicketInput,
     TicketDraft,
     ToolResult,
 )
-
 
 _created_tickets_by_draft: dict[str, CreatedTicket] = {}
 

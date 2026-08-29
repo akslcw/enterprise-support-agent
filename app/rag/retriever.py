@@ -1,6 +1,5 @@
 from app.rag.store import get_collection
 
-
 MAX_DISTANCE = 0.50
 
 def search_knowledge(
@@ -24,7 +23,12 @@ def search_knowledge(
 
     matches = []
 
-    for document, metadata, distance in zip(documents, metadatas, distances):
+    for document, metadata, distance in zip(
+    documents,
+    metadatas,
+    distances,
+    strict=True,
+):
         if distance > max_distance:
             continue
 

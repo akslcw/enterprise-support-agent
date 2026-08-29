@@ -11,6 +11,7 @@ from app.observability import (
     resolve_trace_id,
 )
 
+
 def test_trace_id_validation_accepts_safe_characters() -> None:
     assert is_valid_trace_id("trace-001_abc") is True
     assert is_valid_trace_id("a" * 64) is True

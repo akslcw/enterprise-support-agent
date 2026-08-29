@@ -1,16 +1,18 @@
 import json
 import logging
 import re
-
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import perf_counter
 from uuid import uuid4
 
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,
+    RequestResponseEndpoint,
+)
 from starlette.responses import Response
 
-
+LOG_HANDLER_NAME = "enterprise_support_json_console"
 TRACE_ID_HEADER = "X-Trace-ID"
 HTTP_LOGGER = logging.getLogger("enterprise_support.http")
 TRACE_ID_PATTERN = re.compile(
@@ -52,7 +54,7 @@ class JsonLogFormatter(logging.Formatter):
         payload = {
             "timestamp": datetime.fromtimestamp(
                 record.created,
-                tz=timezone.utc,
+                tz=UTC,
             ).isoformat(),
             "level": record.levelname,
             "logger": record.name,
@@ -93,7 +95,7 @@ def configure_application_logging() -> None:
     application_logger.propagate = False
 
     already_configured = any(
-        getattr(handler, "_enterprise_support_handler", False)
+        handler.get_name() == LOG_HANDLER_NAME
         for handler in application_logger.handlers
     )
 
@@ -102,7 +104,7 @@ def configure_application_logging() -> None:
 
     handler = logging.StreamHandler()
     handler.setFormatter(JsonLogFormatter())
-    handler._enterprise_support_handler = True
+    handler.set_name(LOG_HANDLER_NAME)
 
     application_logger.addHandler(handler)
 
@@ -113,7 +115,7 @@ class TraceIdMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self,
         request: Request,
-        call_next,
+        call_next: RequestResponseEndpoint,
     ) -> Response:
         trace_id = resolve_trace_id(
             request.headers.get(TRACE_ID_HEADER)

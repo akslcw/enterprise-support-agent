@@ -4,7 +4,8 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
-from app.main import ChatRequest, chat
+from app.api.contracts import ChatRequest
+from app.api.routers.chat import chat
 
 
 class SlowGraph:

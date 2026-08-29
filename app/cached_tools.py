@@ -3,8 +3,8 @@ from typing import Any
 
 from langchain_core.tools import BaseTool, StructuredTool
 
-from app.reliability import retry_read_operation
 from app.cache import OrderStatusCache
+from app.reliability import retry_read_operation
 
 
 def extract_order_status_payload(
